@@ -12,13 +12,21 @@ export class UsersService {
     // private readonly registrationKeysService: RegistrationKeysService,
   ) {}
 
-  // async getByEmail(email: string) {
-  //   const user = await this.usersRepository.findOne({ email });
-  //   if (user) {
-  //     return user;
-  //   }
-  //   throw new HttpException('User with this email does not exist', HttpStatus.NOT_FOUND);
-  // }
+  async getById(id: string) {
+    const user = await this.usersRepository.findOne({ id });
+    if (user) {
+      return user;
+    }
+    throw new HttpException('User with this email does not exist', HttpStatus.NOT_FOUND);
+  }
+
+  async getByEmail(email: string) {
+    const user = await this.usersRepository.findOne({ email });
+    if (user) {
+      return user;
+    }
+    throw new HttpException('User with this email does not exist', HttpStatus.NOT_FOUND);
+  }
 
   async create(userData: CreateUserDto) {
     const newUser: User = await this.usersRepository.create(userData);

@@ -23,6 +23,8 @@ class User {
   @Exclude()
   public registrationKey: RegistrationKey;
 
+  public token?: string;
+
   @CreateDateColumn({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 
