@@ -1,10 +1,10 @@
 import { Exclude } from 'class-transformer';
-import {Column, Entity, PrimaryGeneratedColumn, OneToOne, JoinColumn, CreateDateColumn} from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn, OneToOne, JoinColumn, CreateDateColumn } from 'typeorm';
 import RegistrationKey from "../../registration-keys/entities/registrationKey.entity";
-
+import {ROLES} from "../../common/constants/roles.constants";
 
 @Entity()
-class User {
+export default class User {
   @PrimaryGeneratedColumn('uuid')
   public id: string;
 
@@ -25,6 +25,8 @@ class User {
 
   public token?: string;
 
+  public role: string = ROLES.USER;
+
   @CreateDateColumn({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 
@@ -32,4 +34,3 @@ class User {
   updatedAt: Date;
 }
 
-export default User;

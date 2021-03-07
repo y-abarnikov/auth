@@ -18,10 +18,10 @@ services:
     networks:
       - webnet
     depends_on:
-      - redis
+      - sessionRedis
       - postgres
-  redis:
-    container_name: redis
+  sessionRedis:
+    container_name: sessionRedis
     image: redis:5
     networks:
       - webnet

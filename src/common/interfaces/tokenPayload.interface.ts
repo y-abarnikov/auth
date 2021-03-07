@@ -1,5 +1,4 @@
 export default interface TokenPayload {
-  userId?: string;
-  facilityId?: string;
+  id: string;
   r: string;
 }

@@ -9,6 +9,6 @@ const env: any = fs.existsSync(fileConfigPath)
   : dotenv.parse(fs.readFileSync('.env'));
 
 export default (): RedisModuleOptions => ({
-  host: env.SESSION_REDIS_HOST || 'redis',
+  host: env.SESSION_REDIS_HOST || 'sessionRedis',
   port: Number.parseInt(env.SESSION_REDIS_PORT, 10) || 6379,
 });
