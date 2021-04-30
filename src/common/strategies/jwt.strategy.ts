@@ -1,13 +1,12 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable, SetMetadata, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Request } from 'express';
 import { UsersService } from '../../users/users.service';
-import { FacilitiesService } from "../../facilities/facilities.service";
+import { FacilitiesService } from '../../facilities/facilities.service';
 import TokenPayload from '../interfaces/tokenPayload.interface';
-import { ROLES } from "../constants/roles.constants";
-import {Reflector} from "@nestjs/core";
+import { ROLES } from '../constants/roles.constants';
+import { Reflector } from '@nestjs/core';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -19,7 +18,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: configService.get<string>('JWT_SECRET')
+      secretOrKey: configService.get<string>('JWT_SECRET'),
     });
   }
 
@@ -30,7 +29,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         entity = await this.userService.getById(payload.id);
         break;
       case ROLES.FACILITY:
-        entity =  this.facilitiesService.getById(payload.id);
+        entity = this.facilitiesService.getById(payload.id);
         break;
       default:
         throw new UnauthorizedException();

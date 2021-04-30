@@ -1,6 +1,6 @@
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsUUID } from 'class-validator';
 
-export default class CreateFacilityDto {
+export default class FacilityRegisterDto {
   @IsString()
   @IsNotEmpty()
   public serialNumber: string;
@@ -12,4 +12,8 @@ export default class CreateFacilityDto {
   @IsString()
   @IsNotEmpty()
   public model: string;
+
+  @IsUUID()
+  @IsNotEmpty()
+  public registrationKey: string;
 }

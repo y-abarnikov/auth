@@ -16,7 +16,10 @@ export class UsersService {
     if (user) {
       return user;
     }
-    throw new HttpException('User with this id does not exist', HttpStatus.NOT_FOUND);
+    throw new HttpException(
+      'User with this id does not exist',
+      HttpStatus.NOT_FOUND,
+    );
   }
 
   async getByEmail(email: string): Promise<User> {
@@ -24,7 +27,10 @@ export class UsersService {
     if (user) {
       return user;
     }
-    throw new HttpException('User with this email does not exist', HttpStatus.NOT_FOUND);
+    throw new HttpException(
+      'User with this email does not exist',
+      HttpStatus.NOT_FOUND,
+    );
   }
 
   async create(userData: CreateUserDto): Promise<User> {

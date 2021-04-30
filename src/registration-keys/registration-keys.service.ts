@@ -7,16 +7,21 @@ import RegistrationKey from './entities/registrationKey.entity';
 export class RegistrationKeysService {
   constructor(
     @InjectRepository(RegistrationKey)
-    private readonly registrationKeyRepository: Repository<RegistrationKey>
+    private readonly registrationKeyRepository: Repository<RegistrationKey>,
   ) {}
 
-  public async findByKey(key: string, used: boolean = false): Promise<RegistrationKey> {
-    const registrationKey: RegistrationKey = await this.registrationKeyRepository.findOne({ key, used });
+  public async findByKey(key: string, used = false): Promise<RegistrationKey> {
+    const registrationKey: RegistrationKey = await this.registrationKeyRepository.findOne(
+      { key, used },
+    );
     if (registrationKey) {
       return registrationKey;
     }
 
-    throw new HttpException('Registration key is invalid', HttpStatus.BAD_REQUEST);
+    throw new HttpException(
+      'Registration key is invalid',
+      HttpStatus.BAD_REQUEST,
+    );
   }
 
   public async useKey(registrationKey: RegistrationKey): Promise<void> {

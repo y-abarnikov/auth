@@ -1,20 +1,28 @@
 import * as bcrypt from 'bcrypt';
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { UsersService } from '../users/users.service';
-import UserLoginDto from "./dto/userLogin.dto";
+import UserLoginDto from './dto/userLogin.dto';
 import UserRegisterDto from './dto/userRegister.dto';
 import { PostgresErrorCode } from '../common/constants/postgres.constants';
 import User from '../users/entities/user.entity';
 import { RegistrationKeysService } from '../registration-keys/registration-keys.service';
 import RegistrationKey from '../registration-keys/entities/registrationKey.entity';
-import { JwtService } from "@nestjs/jwt";
-import { ConfigService } from "@nestjs/config";
-import TokenPayload from "../common/interfaces/tokenPayload.interface";
-import FacilityRegisterDto from "./dto/facilityRegister.dto";
-import { FacilitiesService } from "../facilities/facilities.service";
-import Facility from "../facilities/entities/facility.entity";
-import FacilityRefreshTokenDto from "./dto/facilityRefreshToken.dto";
-import { ROLES } from "../common/constants/roles.constants";
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import TokenPayload from '../common/interfaces/tokenPayload.interface';
+import FacilityRegisterDto from '../facilities/dto/facilityRegister.dto';
+import { FacilitiesService } from '../facilities/facilities.service';
+import Facility from '../facilities/entities/facility.entity';
+import FacilityRefreshTokenDto from './dto/facilityRefreshToken.dto';
+import { ROLES } from '../common/constants/roles.constants';
+import { FacilityTokens } from 'src/common/interfaces/facilityTokens.interface';
+import GenerateFacilityTokenDto from './dto/generateFacilityToken.dto';
+import { Transaction } from 'typeorm';
 
 @Injectable()
 export class AuthService {
@@ -23,11 +31,13 @@ export class AuthService {
     private readonly facilitiesService: FacilitiesService,
     private readonly registrationKeysService: RegistrationKeysService,
     private readonly jwtService: JwtService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
   ) {}
 
   public async registerUser(registrationData: UserRegisterDto): Promise<User> {
-    const registrationKey: RegistrationKey = await this.registrationKeysService.findByKey(registrationData.registrationKey);
+    const registrationKey: RegistrationKey = await this.registrationKeysService.findByKey(
+      registrationData.registrationKey,
+    );
     const hashedPassword = await bcrypt.hash(registrationData.password, 10);
     try {
       const createdUser = await this.usersService.create({
@@ -39,7 +49,10 @@ export class AuthService {
       return createdUser;
     } catch (error) {
       if (error?.code === PostgresErrorCode.UniqueViolation) {
-        throw new HttpException('User with that email already exists', HttpStatus.BAD_REQUEST);
+        throw new HttpException(
+          'User with that email already exists',
+          HttpStatus.BAD_REQUEST,
+        );
       }
 
       throw error;
@@ -52,48 +65,77 @@ export class AuthService {
       await this.verifyPassword(loginData.password, user.password);
       return user;
     } catch (error) {
-      throw new HttpException('Wrong credentials provided', HttpStatus.UNAUTHORIZED);
+      throw new HttpException(
+        'Wrong credentials provided',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
   }
 
-  private async verifyPassword(plainTextPassword: string, hashedPassword: string) {
+  private async verifyPassword(
+    plainTextPassword: string,
+    hashedPassword: string,
+  ) {
     const isPasswordMatching = await bcrypt.compare(
       plainTextPassword,
-      hashedPassword
+      hashedPassword,
     );
     if (!isPasswordMatching) {
-      throw new HttpException('Wrong credentials provided', HttpStatus.UNAUTHORIZED);
+      throw new HttpException(
+        'Wrong credentials provided',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
   }
 
-  public async registerFacility(registrationData: FacilityRegisterDto): Promise<Facility> {
-    let facility;
-    try {
-      facility = await this.facilitiesService.create(registrationData);
-    } catch (error) {
-      if (error?.code === PostgresErrorCode.UniqueViolation) {
-        throw new HttpException('Facility with that serial number already exists', HttpStatus.BAD_REQUEST);
-      }
-
-      throw error;
-    }
-
-    return facility;
-  }
-
-  public async refreshFacilityToken(refreshTokenData: FacilityRefreshTokenDto): Promise<Facility> {
-    let facility: Facility = await this.facilitiesService.getByRefreshToken(refreshTokenData.refreshToken);
+  public async refreshFacilityToken(
+    refreshTokenData: FacilityRefreshTokenDto,
+  ): Promise<Facility> {
+    let facility: Facility = await this.facilitiesService.getByRefreshToken(
+      refreshTokenData.refreshToken,
+    );
     facility = await this.facilitiesService.renewRefreshToken(facility);
-    facility.token = await this.generateToken({ id: facility.id, r: ROLES.FACILITY });
+    facility.token = await this.generateToken({
+      id: facility.id,
+      r: ROLES.FACILITY,
+    });
     return facility;
   }
-
 
   public async generateToken(payload: TokenPayload): Promise<string> {
-    return this.jwtService.signAsync(payload, { secret: this.configService.get<string>('JWT_SECRET') });
+    return this.jwtService.signAsync(payload, {
+      secret: this.configService.get<string>('JWT_SECRET'),
+    });
   }
 
   public async verifyToken(token: string): Promise<any> {
-    return this.jwtService.verifyAsync(token, { secret: this.configService.get<string>('JWT_SECRET') });
+    return this.jwtService.verifyAsync(token, {
+      secret: this.configService.get<string>('JWT_SECRET'),
+    });
+  }
+
+  public async generateFacilityTokens(
+    generateFacilityTokenDto: GenerateFacilityTokenDto,
+  ): Promise<FacilityTokens> {
+    const facility: Facility = await this.facilitiesService.getByRegistrationKey(
+      generateFacilityTokenDto.registrationKey,
+    );
+
+    if (!facility) {
+      throw new NotFoundException('Facilty not found!');
+    }
+
+    const accessToken = await this.generateToken({
+      id: facility.id,
+      r: ROLES.FACILITY,
+    });
+    const facilityWithNewRefreshToken: Facility = await this.facilitiesService.renewRefreshToken(
+      facility,
+    );
+
+    return {
+      access_token: accessToken,
+      refresh_token: facilityWithNewRefreshToken.refreshToken,
+    } as FacilityTokens;
   }
 }

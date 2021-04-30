@@ -1,7 +1,11 @@
 import { Exclude } from 'class-transformer';
-import { Column, Entity, PrimaryGeneratedColumn, OneToOne, JoinColumn, CreateDateColumn } from 'typeorm';
-import RegistrationKey from "../../registration-keys/entities/registrationKey.entity";
-import {ROLES} from "../../common/constants/roles.constants";
+import {
+  Column,
+  Entity,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+} from 'typeorm';
+import { ROLES } from '../../common/constants/roles.constants';
 
 @Entity()
 export default class User {
@@ -11,20 +15,17 @@ export default class User {
   @Column({ unique: true })
   public email: string;
 
-  @Column()
+  @Column({ nullable: false })
   public name: string;
 
-  @Column()
+  @Column({ nullable: false })
   @Exclude()
   public password: string;
 
-  @OneToOne(() => RegistrationKey)
-  @JoinColumn()
   @Exclude()
-  public registrationKey: RegistrationKey;
-
   public token?: string;
 
+  @Exclude()
   public role: string = ROLES.USER;
 
   @CreateDateColumn({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
@@ -33,4 +34,3 @@ export default class User {
   @CreateDateColumn({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
   updatedAt: Date;
 }
-

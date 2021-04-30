@@ -10,14 +10,14 @@ const env: any = fs.existsSync(fileConfigPath)
   : dotenv.parse(fs.readFileSync('.env'));
 
 export default (): ConnectionOptions => ({
-    type: env.DATABASE_TYPE || 'postgres',
-    host: env.DATABASE_HOST || 'postgres',
-    port: env.DATABASE_PORT || 5432,
-    username: env.DATABASE_USER,
-    password: env.DATABASE_PASSWORD,
-    database: env.DATABASE_NAME,
-    entities: [path.join(process.cwd(), `dist/**/*.entity{.ts,.js}`)],
+  type: env.DATABASE_TYPE || 'postgres',
+  host: env.DATABASE_HOST || 'postgres',
+  port: env.DATABASE_PORT || 5432,
+  username: env.DATABASE_USER,
+  password: env.DATABASE_PASSWORD,
+  database: env.DATABASE_NAME,
+  entities: [path.join(process.cwd(), `dist/**/*.entity{.ts,.js}`)],
 
-    // We are using migrations, synchronize should be set to false.
-    synchronize: true,
+  // We are using migrations, synchronize should be set to false.
+  synchronize: true,
 });

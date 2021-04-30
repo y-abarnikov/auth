@@ -8,7 +8,7 @@ import { UsersModule } from '../users/users.module';
 import { RegistrationKeysModule } from '../registration-keys/registration-keys.module';
 import { LocalStrategy } from '../common/strategies/local.strategy';
 import { JwtStrategy } from '../common/strategies/jwt.strategy';
-import { FacilitiesModule } from "../facilities/facilities.module";
+import { FacilitiesModule } from '../facilities/facilities.module';
 
 @Module({
   imports: [
