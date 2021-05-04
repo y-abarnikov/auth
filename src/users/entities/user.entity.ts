@@ -22,7 +22,6 @@ export default class User {
   @Exclude()
   public password: string;
 
-  @Exclude()
   public token?: string;
 
   @Exclude()

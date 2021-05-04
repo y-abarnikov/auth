@@ -19,6 +19,9 @@ export default class Facility {
   @PrimaryGeneratedColumn('uuid')
   public id: string;
 
+  @Column({ nullable: false })
+  public model: string;
+
   @Column({ unique: true, nullable: false })
   public serialNumber: string;
 

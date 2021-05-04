@@ -5,8 +5,6 @@ import {
   Get,
   HttpCode,
   Post,
-  Req,
-  Session,
   UseGuards,
   UseInterceptors,
   UsePipes,
@@ -15,14 +13,13 @@ import {
 import { AuthService } from './auth.service';
 import UserRegisterDto from './dto/userRegister.dto';
 import LocalAuthGuard from '../common/guards/localAuth.guard';
-import RequestWithUser from '../common/interfaces/requestWithUser.interface';
 import { ROLES } from '../common/constants/roles.constants';
 import User from '../users/entities/user.entity';
-import UserSession from '../common/interfaces/session.interface';
 import Facility from '../facilities/entities/facility.entity';
 import FacilityRefreshTokenDto from './dto/facilityRefreshToken.dto';
 import GenerateFacilityTokenDto from './dto/generateFacilityToken.dto';
 import { FacilityTokens } from '../common/interfaces/facilityTokens.interface';
+import UserLoginDto from './dto/userLogin.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -36,48 +33,16 @@ export class AuthController {
   @Post('users/register')
   @UsePipes(ValidationPipe)
   @UseInterceptors(ClassSerializerInterceptor)
-  async registerUser(
-    @Body() registrationData: UserRegisterDto,
-    @Session() session: UserSession,
-  ): Promise<User> {
-    const user: User = await this.authService.registerUser(registrationData);
-    user.token = await this.authService.generateToken({
-      id: user.id,
-      r: ROLES.USER,
-    });
-    session.jwt = user.token;
-    return user;
+  async registerUser(@Body() registrationData: UserRegisterDto): Promise<User> {
+    return this.authService.registerUser(registrationData);
   }
 
   @Post('users/login')
   @HttpCode(200)
   @UseGuards(LocalAuthGuard)
   @UseInterceptors(ClassSerializerInterceptor)
-  async logInUser(
-    @Req() request: RequestWithUser,
-    @Session() session: UserSession,
-  ): Promise<User> {
-    const { user } = request;
-    if (session.jwt) {
-      try {
-        await this.authService.verifyToken(session.jwt);
-        user.token = session.jwt;
-        return user;
-      } catch (error) {}
-    }
-    user.token = await this.authService.generateToken({
-      id: user.id,
-      r: ROLES.USER,
-    });
-    session.jwt = user.token;
-    return user;
-  }
-
-  @Post('users/logout')
-  @HttpCode(204)
-  @UseInterceptors(ClassSerializerInterceptor)
-  logout(@Session() session: UserSession): void {
-    session.jwt = undefined;
+  async logInUser(@Body() loginData: UserLoginDto): Promise<User> {
+    return this.authService.authenticateUser(loginData);
   }
 
   @HttpCode(200)

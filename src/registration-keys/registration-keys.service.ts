@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, UpdateResult } from 'typeorm';
 import RegistrationKey from './entities/registrationKey.entity';
 
 @Injectable()
@@ -27,5 +27,11 @@ export class RegistrationKeysService {
   public async useKey(registrationKey: RegistrationKey): Promise<void> {
     registrationKey.used = true;
     await this.registrationKeyRepository.save(registrationKey);
+  }
+
+  public async unUseKey(registrationKeyId: string): Promise<UpdateResult> {
+    return this.registrationKeyRepository.update(registrationKeyId, {
+      used: false,
+    });
   }
 }

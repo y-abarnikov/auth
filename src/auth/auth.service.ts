@@ -11,18 +11,15 @@ import UserRegisterDto from './dto/userRegister.dto';
 import { PostgresErrorCode } from '../common/constants/postgres.constants';
 import User from '../users/entities/user.entity';
 import { RegistrationKeysService } from '../registration-keys/registration-keys.service';
-import RegistrationKey from '../registration-keys/entities/registrationKey.entity';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import TokenPayload from '../common/interfaces/tokenPayload.interface';
-import FacilityRegisterDto from '../facilities/dto/facilityRegister.dto';
 import { FacilitiesService } from '../facilities/facilities.service';
 import Facility from '../facilities/entities/facility.entity';
 import FacilityRefreshTokenDto from './dto/facilityRefreshToken.dto';
 import { ROLES } from '../common/constants/roles.constants';
 import { FacilityTokens } from 'src/common/interfaces/facilityTokens.interface';
 import GenerateFacilityTokenDto from './dto/generateFacilityToken.dto';
-import { Transaction } from 'typeorm';
 
 @Injectable()
 export class AuthService {
@@ -35,18 +32,13 @@ export class AuthService {
   ) {}
 
   public async registerUser(registrationData: UserRegisterDto): Promise<User> {
-    const registrationKey: RegistrationKey = await this.registrationKeysService.findByKey(
-      registrationData.registrationKey,
-    );
     const hashedPassword = await bcrypt.hash(registrationData.password, 10);
+    let createdUser: User;
     try {
-      const createdUser = await this.usersService.create({
+      createdUser = await this.usersService.create({
         ...registrationData,
         password: hashedPassword,
-        registrationKey,
       });
-      await this.registrationKeysService.useKey(registrationKey);
-      return createdUser;
     } catch (error) {
       if (error?.code === PostgresErrorCode.UniqueViolation) {
         throw new HttpException(
@@ -57,19 +49,33 @@ export class AuthService {
 
       throw error;
     }
+
+    createdUser.token = await this.generateToken({
+      id: createdUser.id,
+      r: ROLES.USER,
+    });
+
+    return createdUser;
   }
 
   public async authenticateUser(loginData: UserLoginDto) {
+    let user: User;
     try {
-      const user: User = await this.usersService.getByEmail(loginData.email);
+      user = await this.usersService.getByEmail(loginData.email);
       await this.verifyPassword(loginData.password, user.password);
-      return user;
     } catch (error) {
       throw new HttpException(
         'Wrong credentials provided',
         HttpStatus.UNAUTHORIZED,
       );
     }
+
+    user.token = await this.generateToken({
+      id: user.id,
+      r: ROLES.USER,
+    });
+
+    return user;
   }
 
   private async verifyPassword(

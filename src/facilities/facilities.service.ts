@@ -5,11 +5,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, UpdateResult } from 'typeorm';
 import Facility from './entities/facility.entity';
 import { UtilsService } from '../shared/services/utils.service';
 import { RegistrationKeysService } from 'src/registration-keys/registration-keys.service';
 import { CreateFacility } from './createFacility.interface';
+import UpdateFacilityDto from './dto/updateFacility.dto';
 
 @Injectable()
 export class FacilitiesService {
@@ -21,7 +22,10 @@ export class FacilitiesService {
   ) {}
 
   async getById(id: string): Promise<Facility> {
-    const facility = await this.facilitiesRepository.findOne({ id });
+    const facility = await this.facilitiesRepository.findOne(
+      { id },
+      { relations: ['user', 'registrationKey'] },
+    );
     if (facility) {
       return facility;
     }
@@ -51,6 +55,13 @@ export class FacilitiesService {
     return facility;
   }
 
+  public async update(
+    id: string,
+    data: UpdateFacilityDto,
+  ): Promise<UpdateResult> {
+    return this.facilitiesRepository.update(id, data);
+  }
+
   public async getByRefreshToken(refreshToken: string): Promise<Facility> {
     const facility = await this.facilitiesRepository.findOne({ refreshToken });
     if (facility) {
@@ -76,5 +87,22 @@ export class FacilitiesService {
         qb.where('registrationKey.key = :regKey', { regKey: registrationKey });
       },
     });
+  }
+
+  public async getByUserId(id: string) {
+    return this.facilitiesRepository.find({
+      join: {
+        alias: 'facilities',
+        leftJoin: { user: 'facilities.user' },
+      },
+      where: (qb) => {
+        qb.where('user.id = :id', { id });
+      },
+    });
+  }
+
+  public async deleteFacility(facility: Facility): Promise<void> {
+    await this.facilitiesRepository.delete(facility.id);
+    await this.registrationKeysService.unUseKey(facility.registrationKey.id);
   }
 }

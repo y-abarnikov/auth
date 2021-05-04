@@ -2,9 +2,13 @@ import {
   Body,
   ClassSerializerInterceptor,
   Controller,
+  Delete,
+  ForbiddenException,
   Get,
   HttpException,
   HttpStatus,
+  Param,
+  Patch,
   Post,
   Req,
   UseGuards,
@@ -22,6 +26,8 @@ import JwtAuthGuard from '../common/guards/jwtAuth.guard';
 import { FacilitiesService } from './facilities.service';
 import { UsersService } from '../users/users.service';
 import { PostgresErrorCode } from 'src/common/constants/postgres.constants';
+import { UpdateResult } from 'typeorm';
+import UpdateFacilityDto from './dto/updateFacility.dto';
 
 @Controller('facilities')
 export class FacilitiesController {
@@ -64,5 +70,69 @@ export class FacilitiesController {
     }
 
     return facility;
+  }
+
+  @Patch(':id')
+  @Roles(ROLES.USER)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UsePipes(ValidationPipe)
+  @UseInterceptors(ClassSerializerInterceptor)
+  async updateFacility(
+    @Req() request: RequestWithUser,
+    @Param('id') id: string,
+    @Body() updateFacilityData: UpdateFacilityDto,
+  ): Promise<UpdateResult> {
+    const { user } = request;
+    await this.usersService.getById(user.id);
+    return this.facilitiesService.update(id, updateFacilityData);
+  }
+
+  @Get(':id')
+  @Roles(ROLES.USER)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UsePipes(ValidationPipe)
+  @UseInterceptors(ClassSerializerInterceptor)
+  async getById(
+    @Req() request: RequestWithUser,
+    @Param('id') id: string,
+  ): Promise<Facility> {
+    const { user } = request;
+    await this.usersService.getById(user.id);
+    const facility: Facility = await this.facilitiesService.getById(id);
+    if (facility.user.id !== user.id) {
+      throw new ForbiddenException('Access denied!');
+    }
+
+    return facility;
+  }
+
+  @Get()
+  @Roles(ROLES.USER)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UsePipes(ValidationPipe)
+  @UseInterceptors(ClassSerializerInterceptor)
+  async getAllByOwner(@Req() request: RequestWithUser): Promise<Facility[]> {
+    const { user } = request;
+    await this.usersService.getById(user.id);
+    return this.facilitiesService.getByUserId(user.id);
+  }
+
+  @Delete(':id')
+  @Roles(ROLES.USER)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UsePipes(ValidationPipe)
+  @UseInterceptors(ClassSerializerInterceptor)
+  async deleteById(
+    @Req() request: RequestWithUser,
+    @Param('id') id: string,
+  ): Promise<void> {
+    const { user } = request;
+    await this.usersService.getById(user.id);
+    const facility: Facility = await this.facilitiesService.getById(id);
+    if (facility.user.id !== user.id) {
+      throw new ForbiddenException('Access denied!');
+    }
+
+    await this.facilitiesService.deleteFacility(facility);
   }
 }

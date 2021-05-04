@@ -12,8 +12,4 @@ export default class UserRegisterDto {
   @IsNotEmpty()
   @MinLength(7)
   password: string;
-
-  @IsString()
-  @IsNotEmpty()
-  registrationKey: string;
 }
